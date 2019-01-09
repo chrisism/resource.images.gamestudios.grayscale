@@ -1,3 +1,34 @@
+// Utility scripts for building addons for Kodi
+//
+// Versioning is based on Semver and using the version from package.json
+// To execute the scripts add a config.json file to the root next to this file with the following layout:
+//
+//  {
+//    "addon": {
+//        "packagename": "<NAME OF ADDON>",
+//        "src": "<FOLDER WITH PACKAGE CONTENTS>",
+//        "dist": "<FOLDER TO PLACE PACKAGES>",
+//        "zip_destination": "./dist",
+//        "semver": "",
+//		"textures": {
+//			"toolpath": "<PATH TO TEXTUREPACKER, e.g:./tools/kodi-texturepacker/windows/texturepacker.exe>",
+//			"packages": [
+//				{
+//					"folder": "<FOLDER WITH IMAGES TO PACK>",
+//					"name": "<NAME OF TEXTURE PACKAGE>"
+//				}
+//			]
+//		}
+//    },
+//    "kodi": {
+//      "addons_directory": "<LOCAL KODI ADDONS FOLDER FOR DIRECT PUBLISHING>",
+//      "host": "<KODI WEBSERVER HOST>",
+//      "port": "<KODI WEBSERVER PORT>",
+//      "user": "<KODI WEBSERVER USERNAME>",
+//      "password": "<KODI WEBSERVER PASSWORD>"
+//    }
+//  }
+
 var gulp = require('gulp');
 var zip = require('gulp-zip');
 var replace = require('gulp-replace');
@@ -116,6 +147,9 @@ gulp.task('copyFilesToKodi', () => {
 });
 
 gulp.task('reload-kodi-skin', (bc) => {
+	
+	if (config.kodi.host === '')
+		return bc();
        
     var auth = '';
     if (config.kodi.user !== '') {
