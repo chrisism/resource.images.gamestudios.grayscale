@@ -7,8 +7,9 @@
 /.project
 /.pydevproject
 /.settings
+/.dist
 Thumbs.db
 *~
 .cache
-config.json
+.addon
 package-lock.json

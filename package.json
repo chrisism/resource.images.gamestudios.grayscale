@@ -1,25 +1,19 @@
 {
-    "name": "plugin.video.ziggo",
-    "version": "1.0.0",
+    "name": "resource.images.gamestudios.grayscale",
+    "version": "1.0.1",
     "scripts": {
-        "build": "gulp build",
-        "build-minor": "gulp build-minor",
-        "build-patch": "gulp build-patch",
-        "build-publish": "gulp build-publish",
-        "build-publish-minor": "gulp build-publish-minor",
-        "build-publish-patch": "gulp build-publish-patch",
-        "publish": "gulp publish"
+        "build-only": "addon build --v",
+        "build": "addon build && addon package",
+        "build-patch": "addon versioning --semver patch && build",
+        "build-minor": "addon versioning --semver minor && build",
+        "build-major": "addon versioning --semver major && build",
+        "build-install": "build && addon install",
+        "build-install-patch": "build-patch && addon install",
+        "build-install-minor": "build-minor && addon install",
+        "build-install-marjor": "build-major && addon install"
     },
     "devDependencies": {
-        "del": "^2.2.2",
-        "gulp": "^4.0.0",
-        "gulp-bump": "^3.1.1",
-        "gulp-cheerio": "^0.6.2",
-        "gulp-json-editor": "^2.4.4",
-        "gulp-replace": "^0.5.4",
-        "gulp-zip": "^4.2.0",
-        "request": "^2.88.0",
-        "semver": "^5.6.0"
+        "kodi-addon-builder": "^1.1.1"
     },
     "dependencies": {}
 }
