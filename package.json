@@ -2,18 +2,39 @@
     "name": "resource.images.gamestudios.grayscale",
     "version": "1.0.1",
     "scripts": {
-        "build-only": "addon build --v",
-        "build": "addon build && addon package",
-        "build-patch": "addon versioning --semver patch && build",
-        "build-minor": "addon versioning --semver minor && build",
-        "build-major": "addon versioning --semver major && build",
-        "build-install": "build && addon install",
-        "build-install-patch": "build-patch && addon install",
-        "build-install-minor": "build-minor && addon install",
-        "build-install-marjor": "build-major && addon install"
+        "build": "addon build",
+        "build-patch": "addon versioning --semver patch && npm run build",
+        "build-minor": "addon versioning --semver minor && npm run build",
+        "build-major": "addon versioning --semver major && npm run build",
+        "build-pack": "npm run build && addon package",
+        "build-pack-patch": "npm run build-patch && addon package",
+        "build-pack-minor": "npm run build-minor && addon package",
+        "build-pack-major": "npm run build-major && addon package",
+        "build-publish": "npm run build && addon repository",
+        "build-publish-patch": "npm run build-patch && addon repository",
+        "build-publish-minor": "npm run build-minor && addon repository",
+        "build-publish-major": "npm run build-major && addon repository",
+        "build-install": "npm run build && addon install",
+        "build-install-patch": "npm run build-patch && addon install",
+        "build-install-minor": "npm run build-minor && addon install",
+        "build-install-major": "npm run build-major && addon install"
     },
     "devDependencies": {
-        "kodi-addon-builder": "^1.1.1"
+        "kodi-addon-builder": "^1.2.1"
     },
-    "dependencies": {}
+    "dependencies": {},
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/chrisism/resource.images.gamestudios.grayscale.git"
+    },
+    "keywords": [
+        "kodi",
+        "addon"
+    ],
+    "author": "chrisism",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/chrisism/resource.images.gamestudios.grayscale/issues"
+    },
+    "homepage": "https://github.com/chrisism/resource.images.gamestudios.grayscale#readme"
 }
