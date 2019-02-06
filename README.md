@@ -5,6 +5,10 @@ Credits & thanks:
 * KiSUAN for the original icon set
 * Rufoo for the nice additions
 
+## How to get?
+The sources can be found at https://github.com/chrisism/resource.images.gamestudios.grayscale  
+Or download the package from my repository https://github.com/chrisism/repository.chrisism
+
 ## How to use?
 When you have a ListItem with the Studio property in your skin you can use the following syntax:
 ```xml
