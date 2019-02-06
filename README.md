@@ -3,6 +3,13 @@ Image resource set containing game studio icons/logos to be used in Kodi skins.
 
 Credits & thanks:
 * KiSUAN for the original icon set
+* Rufoo for the nice additions
+
+## How to use?
+When you have a ListItem with the Studio property in your skin you can use the following syntax:
+```xml
+<texture>resource://resource.images.gamestudios.grayscale/$INFO[ListItem.Studio,,.png]</texture>
+```
 
 ## Contribute?
 Have nice additions or fixes? You can contribute by using Git. Fork this [repository](https://github.com/chrisism/resource.images.gamestudios.grayscale) and add your stuff. 
@@ -21,8 +28,8 @@ Example contents:
   "dist": "./.dist/",
   "texturepaths": [
 			"resource.images.gamestudios.grayscale/resources/Textures/"
-  ],		
-  "repositoryfolder": "./.dist/",
+  ],			
+  "zipfolder": "./.dist/",
   "addonsdirectory": "%APPDATA%\\AppData\\Roaming\\Kodi\\addons",
   "semver": "",
   "host": "localhost",
