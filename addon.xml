@@ -9,5 +9,10 @@
 		<description lang="en">Game Studio Icons (grayscale)</description>
 		<platform>all</platform>
 		<license>Creative Commons Attribution-Share Alike 3.0 United States</license>
+		
+		<assets>
+			<icon>icon.png</icon>
+			<fanart>fanart.jpg</fanart>
+		</assets>
 	</extension>
 </addon>
