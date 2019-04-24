@@ -31,7 +31,10 @@ Example contents:
   ],
   "dist": "./.dist/",
   "texturepaths": [
-			"resource.images.gamestudios.grayscale/resources/Textures/"
+			{
+        "path": "resource.images.gamestudios.grayscale/resources/",
+        "name": "Textures"
+      }
   ],			
   "zipfolder": "./.dist/",
   "addonsdirectory": "%APPDATA%\\AppData\\Roaming\\Kodi\\addons",
