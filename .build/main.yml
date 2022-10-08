@@ -34,7 +34,7 @@ variables:
   isDev: ${{eq(variables['Build.SourceBranch'], 'refs/heads/dev')}}
   workingDirectory: '$(Build.SourcesDirectory)'
   packerToolPath: '$(workingDirectory)/.build/tools/kodi-texturepacker/linux/TexturePacker'
-  addonName: resources.images.gamestudios.grayscale
+  addonName: resource.images.gamestudios.grayscale
   packerSrc: '$(workingDirectory)/resources/'
   packerDest: '$(workingDirectory)/resources/Textures.xbt'
 
