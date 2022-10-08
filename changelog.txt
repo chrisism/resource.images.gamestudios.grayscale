@@ -1,14 +1,14 @@
-v1.3.0
-- Added ESRB flags and updated build script
-
-v1.2.0
-- Moved image files one folder up because usage new builder script.
-
-v1.1.0
-- More studio icons, credits to Rufoo.
-
-v1.0.1
-- Updated to use new tooling.
-
-v1.0.0
+[B]v1.3.0[/B][CR]
+- Added ESRB flags and updated build script[CR]
+[CR]
+[B]v1.2.0[/B][CR]
+- Moved image files one folder up because usage new builder script.[CR]
+[CR]
+[B]v1.1.0[/B][CR]
+- More studio icons, credits to Rufoo.[CR]
+[CR]
+[B]v1.0.1[/B][CR]
+- Updated to use new tooling.[CR]
+[CR]
+[B]v1.0.0[/B][CR]
 - Initial release
