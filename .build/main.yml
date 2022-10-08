@@ -35,8 +35,8 @@ variables:
   workingDirectory: '$(Build.SourcesDirectory)'
   packerToolPath: '$(workingDirectory)/.build/tools/kodi-texturepacker/linux/TexturePacker'
   addonName: resources.images.gamestudios.grayscale
-  packerSrc: '$(workingDirectory)/media/'
-  packerDest: '$(workingDirectory)/media/Textures.xbt'
+  packerSrc: '$(workingDirectory)/resources/'
+  packerDest: '$(workingDirectory)/resources/Textures.xbt'
 
 stages:
 - stage: Build
