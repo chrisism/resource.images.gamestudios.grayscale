@@ -69,6 +69,20 @@ stages:
         displayName: 'Setting version variables'
         condition: eq(${{variables.isMaster}}, true)
 
+
+      - task: UsePythonVersion@0
+        displayName: 'Use Python 3.x'
+
+      - task: PipAuthenticate@0
+        displayName: Authenticate with artifact feed
+        inputs:
+          artifactFeeds: AKL/akl_libs
+
+      - bash: |
+          python -m pip install --upgrade pip
+          pip install kodi.tools    
+        displayName: pip install 
+
       - task: RegExMatchReplace@2
         displayName: 'Set addon version'
         inputs:
@@ -79,6 +93,10 @@ stages:
       - script: |
             $(packerToolPath) -dupecheck -input $(packerSrc) -output $(packerDest)
         displayName: 'Run texturepacker'
+
+      - bash: update_addon_news $(workingDirectory)/addon.xml $(workingDirectory)/changelog.md
+        displayName: 'Add changelog in addon.xml'
+        workingDirectory: '$(workingDirectory)'
 
       - task: CopyFiles@2
         displayName: 'Copy addon files for package'
@@ -92,23 +110,23 @@ stages:
               *.png
               **/*.xbt
               !build/**/*.*
-          TargetFolder: '$(build.artifactstagingdirectory)/resource.images.gamestudios.grayscale/'
+          TargetFolder: '$(build.artifactstagingdirectory)/$(addonName)/'
           CleanTargetFolder: true
           flattenFolders: false
           OverWrite: true
 
       - task: ArchiveFiles@2
         inputs:
-          rootFolderOrFile: '$(build.artifactstagingdirectory)/resource.images.gamestudios.grayscale'
+          rootFolderOrFile: '$(build.artifactstagingdirectory)/$(addonName)'
           includeRootFolder: true
           archiveType: 'zip'
-          archiveFile: '$(build.artifactstagingdirectory)/package/resource.images.gamestudios.grayscale-$(addonVersion).zip'
+          archiveFile: '$(build.artifactstagingdirectory)/package/$(addonName)-$(addonVersion).zip'
           replaceExistingArchive: true
  
       - task: CopyFiles@2
         displayName: 'Copy addon files for repository'
         inputs:
-          SourceFolder: '$(build.artifactstagingdirectory)/resource.images.gamestudios.grayscale/'
+          SourceFolder: '$(build.artifactstagingdirectory)/$(addonName)/'
           Contents: |
               addon.xml
               *.jpg
@@ -118,7 +136,7 @@ stages:
           flattenFolders: false
           OverWrite: true
 
-      - script: md5sum resource.images.gamestudios.grayscale-$(addonVersion).zip > resource.images.gamestudios.grayscale-$(addonVersion).zip.md5
+      - script: md5sum $(addonName)-$(addonVersion).zip > $(addonName)-$(addonVersion).zip.md5
         workingDirectory: $(build.artifactstagingdirectory)/package/
         displayName: 'Creating md5 file for zipfile'
 
@@ -130,8 +148,28 @@ stages:
         displayName: 'Publishing application as artifact'
         inputs:
           PathtoPublish: '$(build.artifactstagingdirectory)/package/'
-          ArtifactName: 'resource.images.gamestudios.grayscale'
+          ArtifactName: '$(addonName)'
           publishLocation: 'Container'
+
+      - task: GithubRelease@1 
+        displayName: 'Create GitHub Release'
+        condition: and(succeeded(), eq(${{variables.isMaster}}, true))
+        continueOnError: true
+        inputs:
+          gitHubConnection: 'github.com_chrisism'
+          repositoryName: chrisism/$(addonName)
+          action: 'create'
+          target: '$(Build.SourceVersion)'
+          tagSource: 'userSpecifiedTag'
+          tag: $(tagVersion)
+          title: $(Build.BuildNumber)
+          releaseNotesSource: filePath
+          releaseNotesFilePath: $(workingDirectory)/changelog.md  
+          addChangeLog: true
+          assets: |
+            $(build.artifactstagingdirectory)/package/*.*
+            $(workingDirectory)/README.md
+
      
 - stage: DeployStaging
   displayName: Deployment on Staging
