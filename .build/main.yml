@@ -109,7 +109,7 @@ stages:
               *.jpg
               *.png
               **/*.xbt
-              !build/**/*.*
+              !.build/**/*.*
           TargetFolder: '$(build.artifactstagingdirectory)/$(addonName)/'
           CleanTargetFolder: true
           flattenFolders: false
