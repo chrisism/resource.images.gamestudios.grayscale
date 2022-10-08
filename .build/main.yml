@@ -102,7 +102,7 @@ stages:
           rootFolderOrFile: '$(build.artifactstagingdirectory)/resource.images.gamestudios.grayscale'
           includeRootFolder: true
           archiveType: 'zip'
-          archiveFile: '$(build.artifactstagingdirectory)/package/resource.images.gamestudios.grayscale-$(packageVersion).zip'
+          archiveFile: '$(build.artifactstagingdirectory)/package/resource.images.gamestudios.grayscale-$(addonVersion).zip'
           replaceExistingArchive: true
  
       - task: CopyFiles@2
@@ -118,7 +118,7 @@ stages:
           flattenFolders: false
           OverWrite: true
 
-      - script: md5sum resource.images.gamestudios.grayscale-$(packageVersion).zip > resource.images.gamestudios.grayscale-$(packageVersion).zip.md5
+      - script: md5sum resource.images.gamestudios.grayscale-$(addonVersion).zip > resource.images.gamestudios.grayscale-$(addonVersion).zip.md5
         workingDirectory: $(build.artifactstagingdirectory)/package/
         displayName: 'Creating md5 file for zipfile'
 
