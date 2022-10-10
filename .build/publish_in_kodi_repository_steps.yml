@@ -1,0 +1,59 @@
+# Azure Devops Pipeline template
+# 
+# This pipeline template part defines the deployment or publishing
+# of the addon in a kodi repository through a PR.
+#
+steps:
+  - script: |
+      git clone https://$(kodi_repository_url)
+      git checkout $(kodi_branch_name)
+    workingDirectory: $(Pipeline.Workspace)/
+    displayName: 'Clone git repository for kodi repository'
+
+  - script: |
+      git config user.email $(git_emailAddress)
+      git config user.name $(git_userName)
+    workingDirectory: $(Pipeline.Workspace)/$(kodi_repository_name)
+    displayName: 'Configure git settings for kodi repository'
+
+  - task: CopyFiles@2
+    displayName: 'Copy addon into kodi git repository'
+    inputs:
+      SourceFolder: '$(Pipeline.Workspace)/$(addonName).Sources'
+      Contents: '**/*.*'
+      TargetFolder: '$(Pipeline.Workspace)/$(kodi_repository_name)/$(addonName)'
+      CleanTargetFolder: true
+      flattenFolders: false
+      OverWrite: true
+  
+  - script: |
+      git add .
+      git commit -m "[$(addon_name)] $(addonVersion)"
+    workingDirectory: $(Pipeline.Workspace)/$(kodi_repository_name)/
+    displayName: 'Git - Add and commit (kodi repository)'
+
+  - script: |
+      git push https://$(github_token)@$(kodi_repository_url) $(kodi_branch_name) 
+    workingDirectory: $(Pipeline.Workspace)/$(kodi_repository_name)/
+    displayName: 'Git - Push (kodi repository)'
+
+
+  - script: echo "##vso[task.setvariable variable=changesTxt;isOutput=true]$(sed -n '1,$p' $(Pipeline.Workspace)/$(addonName).Sources/changelog.md | tr '\n' ' ')"
+    name: 'changelogText'
+    displayName: 'Setting changelog text variables'
+
+  - task: azuredevopsgithub@0
+    displayName: 'Create PR'
+    inputs:
+      gitHubConnection: 'github.com_chrisism'
+      method: 'POST'
+      githubrestapiurl: 'https://api.github.com/repos/xbmc/$(kodi_repository_name_/pulls'
+      body: |
+        {  
+          "owner": "xbmc",
+          "repo": "$(kodi_repository_name)",
+          "title": "[$(addon_name)] $(addonVersion)",
+          "head": "chrisism:$(kodi_branch_name)",
+          "base": "$(kodi_branch_name)",
+          "body": "### Description\n$(changesTxt)\n### Checklist:\n- [X] My code follows the [add-on rules](http://kodi.wiki/view/Add-on_rules) and [piracy stance](http://kodi.wiki/view/Official:Forum_rules#Piracy_Policy) of this project. \n- [X] I have read the [CONTRIBUTING](https://github.com/xbmc/repo-resources/blob/master/CONTRIBUTING.md) document\n- [X] Each add-on submission should be a single commit with using the following style: [plugin.video.foo] v1.0.0\n\nAdditional information :\n- Submitting your add-on to this specific branch makes it available to any Kodi version equal or higher than the branch name with the applicable Kodi dependencies limits.\n- [add-on development](http://kodi.wiki/view/Add-on_development) wiki page.\n- Kodi [pydocs](http://kodi.wiki/view/PyDocs) provide information about the Python API\n- [PEP8](https://www.python.org/dev/peps/pep-0008/) codingstyle which is considered best practice but not mandatory.\n- This add-on repository has automated code guideline check which could help you improve your coding. You can find the results of these check at [Codacy](https://www.codacy.com/app/Kodi/repo-plugins/dashboard). You can create your own account as well to continuously monitor your python coding before submitting to repo.\n- Development questions can be asked in the [add-on development](http://forum.kodi.tv/forumdisplay.php?fid=26) section on the Kodi forum."
+        }

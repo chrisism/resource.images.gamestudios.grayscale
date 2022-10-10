@@ -115,6 +115,23 @@ stages:
           flattenFolders: false
           OverWrite: true
 
+      - task: CopyFiles@2
+        condition: eq(${{variables.isMaster}}, true)
+        displayName: 'Copy addon sources for kodi repository'
+        inputs:
+          SourceFolder: ''
+          Contents: |
+              **/*.md
+              **/*.xml
+              **/*.txt
+              **/*.png
+              **/*.jpg
+              !.build/**/*.*
+          TargetFolder: '$(build.artifactstagingdirectory)/$(addonName)_src/'
+          CleanTargetFolder: true
+          flattenFolders: false
+          OverWrite: true
+
       - task: ArchiveFiles@2
         inputs:
           rootFolderOrFile: '$(build.artifactstagingdirectory)/$(addonName)'
@@ -149,6 +166,22 @@ stages:
         inputs:
           PathtoPublish: '$(build.artifactstagingdirectory)/package/'
           ArtifactName: '$(addonName)'
+          publishLocation: 'Container'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publishing application as artifact'
+        inputs:
+          PathtoPublish: '$(build.artifactstagingdirectory)/package/'
+          ArtifactName: '$(addonName)'
+          publishLocation: 'Container'
+
+
+      - task: PublishBuildArtifacts@1
+        condition: eq(${{variables.isMaster}}, true)
+        displayName: 'Publishing sources as artifact'
+        inputs:
+          PathtoPublish: '$(build.artifactstagingdirectory)/$(addonName)_src/'
+          ArtifactName: '$(addonName).Sources'
           publishLocation: 'Container'
 
       - task: GithubRelease@1 
@@ -192,6 +225,9 @@ stages:
         runOnce:
           deploy:
             steps:
+              - download: current
+                displayName: 'Downloading addon artifact'
+
               - template: publish_in_repository_steps.yml
 
 - stage: DeployProd
@@ -212,9 +248,20 @@ stages:
           value: 'matrix'
         - name: branch_name
           value: master
+        - name: kodi_repository_url
+          value: github.com/chrisism/repo-resources.git
+        - name: kodi_repository_name
+          value: repo-resources
+        - name: kodi_branch_name
+          value: leia
+        
 
       strategy:     
         runOnce:
           deploy:
             steps:
+              - download: current
+                displayName: 'Downloading addon artifacts'
+                
               - template: publish_in_repository_steps.yml
+              - template: publish_in_kodi_repository_steps.yml

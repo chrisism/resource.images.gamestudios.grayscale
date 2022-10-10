@@ -4,9 +4,6 @@
 # of the addon in a kodi repository build in github.
 #
 steps:
-  - download: current
-    displayName: 'Downloading addon artifact'
-      
   - script: |
       git clone https://$(repository_url)
     workingDirectory: $(Pipeline.Workspace)/
