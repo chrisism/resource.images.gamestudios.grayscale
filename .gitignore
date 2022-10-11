@@ -13,3 +13,5 @@ Thumbs.db
 .cache
 .addon
 package-lock.json
+.vscode/
+resources/Textures.xbt

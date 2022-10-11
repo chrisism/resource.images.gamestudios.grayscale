@@ -1,0 +1,267 @@
+# Azure Devops Pipeline definition
+# 
+# Will build and release packages on Gitflow branch triggers (main, release/*).
+# In build phase it will apply semver versioning with help of GitVersion (plugin needed).
+# Automatically runs the texturepacker tool to compile images into xbt file. The results of 
+# the build are stored in a package on Azure Devops.
+# github repository containing a Kodi addon repository and add the new package so users can
+# After the build phase the deployment phase follows. During this phase it will checkout the
+# download it.
+# There are 2 deployment phases, first one for staging where only beta/release candidates are 
+# deployed. Second one is the main repository for official releases (based on master/main branch).
+#
+# Needed extensions:
+# - GitTools / GitVersion
+# - RegEx Match & Replace
+#
+# Needed variables (var groups in library)
+# - repository.variables
+#   - git_emailAddress 
+#   - git_userName
+#   - github_token
+
+trigger:
+- master
+- release/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  isMaster: or(${{eq(variables['Build.SourceBranch'], 'refs/heads/master')}},${{eq(variables['Build.SourceBranch'], 'refs/heads/main')}})
+  isReleaseCandidate: ${{startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')}}
+  isHotfix: ${{startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/')}}
+  isDev: ${{eq(variables['Build.SourceBranch'], 'refs/heads/dev')}}
+  workingDirectory: '$(Build.SourcesDirectory)'
+  packerToolPath: '$(workingDirectory)/.build/tools/kodi-texturepacker/linux/TexturePacker'
+  addonName: resource.images.gamestudios.grayscale
+  packerSrc: '$(workingDirectory)/resources/'
+  packerDest: '$(workingDirectory)/resources/Textures.xbt'
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:
+    - job: build
+      displayName: build
+        
+      steps:
+      - checkout: self
+        submodules: true
+
+      - task: gitversion/setup@0
+        displayName: 'Install GitTools'
+        inputs:
+          versionSpec: '5.x'
+
+      - task: gitversion/execute@0
+        displayName: 'Executing gitversion'
+
+      - script: |
+            echo '##vso[task.setvariable variable=addonVersion]$(GitVersion.Major).$(GitVersion.Minor).$(GitVersion.Patch)~$(GitVersion.PreReleaseLabel)$(GitVersion.PreReleaseNumber)
+            echo '##vso[task.setvariable variable=tagVersion]$(GitVersion.LegacySemVer)
+        displayName: 'Setting version variables'
+        condition: not(eq(${{variables.isMaster}}, true))
+        
+      - script: |
+            echo '##vso[task.setvariable variable=addonVersion]$(GitVersion.Major).$(GitVersion.Minor).$(GitVersion.Patch)
+            echo '##vso[task.setvariable variable=tagVersion]$(GitVersion.Major).$(GitVersion.Minor).$(GitVersion.Patch)
+        displayName: 'Setting version variables'
+        condition: eq(${{variables.isMaster}}, true)
+
+
+      - task: UsePythonVersion@0
+        displayName: 'Use Python 3.x'
+
+      - task: PipAuthenticate@0
+        displayName: Authenticate with artifact feed
+        inputs:
+          artifactFeeds: AKL/akl_libs
+
+      - bash: |
+          python -m pip install --upgrade pip
+          pip install kodi.tools    
+        displayName: pip install 
+
+      - task: RegExMatchReplace@2
+        displayName: 'Set addon version'
+        inputs:
+          PathToFile: 'addon.xml'
+          RegEx: 'version="\d+\.\d+\.\d+.*" provider'
+          ValueToReplace: 'version="$(addonVersion)" provider'
+          
+      - script: |
+            $(packerToolPath) -dupecheck -input $(packerSrc) -output $(packerDest)
+        displayName: 'Run texturepacker'
+
+      - bash: update_addon_news $(workingDirectory)/addon.xml $(workingDirectory)/changelog.md
+        displayName: 'Add changelog in addon.xml'
+        workingDirectory: '$(workingDirectory)'
+
+      - task: CopyFiles@2
+        displayName: 'Copy addon files for package'
+        inputs:
+          SourceFolder: ''
+          Contents: |
+              **/*.md
+              **/*.xml
+              **/*.txt
+              *.jpg
+              *.png
+              **/*.xbt
+              !.build/**/*.*
+          TargetFolder: '$(build.artifactstagingdirectory)/$(addonName)/'
+          CleanTargetFolder: true
+          flattenFolders: false
+          OverWrite: true
+
+      - task: CopyFiles@2
+        condition: eq(${{variables.isMaster}}, true)
+        displayName: 'Copy addon sources for kodi repository'
+        inputs:
+          SourceFolder: ''
+          Contents: |
+              **/*.md
+              **/*.xml
+              **/*.txt
+              **/*.png
+              **/*.jpg
+              !.build/**/*.*
+          TargetFolder: '$(build.artifactstagingdirectory)/$(addonName)_src/'
+          CleanTargetFolder: true
+          flattenFolders: false
+          OverWrite: true
+
+      - task: ArchiveFiles@2
+        inputs:
+          rootFolderOrFile: '$(build.artifactstagingdirectory)/$(addonName)'
+          includeRootFolder: true
+          archiveType: 'zip'
+          archiveFile: '$(build.artifactstagingdirectory)/package/$(addonName)-$(addonVersion).zip'
+          replaceExistingArchive: true
+ 
+      - task: CopyFiles@2
+        displayName: 'Copy addon files for repository'
+        inputs:
+          SourceFolder: '$(build.artifactstagingdirectory)/$(addonName)/'
+          Contents: |
+              addon.xml
+              *.jpg
+              *.png
+          TargetFolder: '$(build.artifactstagingdirectory)/package/'
+          CleanTargetFolder: false
+          flattenFolders: false
+          OverWrite: true
+
+      - script: md5sum $(addonName)-$(addonVersion).zip > $(addonName)-$(addonVersion).zip.md5
+        workingDirectory: $(build.artifactstagingdirectory)/package/
+        displayName: 'Creating md5 file for zipfile'
+
+      - script: md5sum addon.xml > addon.xml.md5
+        workingDirectory: $(build.artifactstagingdirectory)/package/
+        displayName: 'Creating md5 file for addonxml'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publishing application as artifact'
+        inputs:
+          PathtoPublish: '$(build.artifactstagingdirectory)/package/'
+          ArtifactName: '$(addonName)'
+          publishLocation: 'Container'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publishing application as artifact'
+        inputs:
+          PathtoPublish: '$(build.artifactstagingdirectory)/package/'
+          ArtifactName: '$(addonName)'
+          publishLocation: 'Container'
+
+
+      - task: PublishBuildArtifacts@1
+        condition: eq(${{variables.isMaster}}, true)
+        displayName: 'Publishing sources as artifact'
+        inputs:
+          PathtoPublish: '$(build.artifactstagingdirectory)/$(addonName)_src/'
+          ArtifactName: '$(addonName).Sources'
+          publishLocation: 'Container'
+
+      - task: GithubRelease@1 
+        displayName: 'Create GitHub Release'
+        condition: and(succeeded(), eq(${{variables.isMaster}}, true))
+        continueOnError: true
+        inputs:
+          gitHubConnection: 'github.com_chrisism'
+          repositoryName: chrisism/$(addonName)
+          action: 'create'
+          target: '$(Build.SourceVersion)'
+          tagSource: 'userSpecifiedTag'
+          tag: $(tagVersion)
+          title: $(Build.BuildNumber)
+          releaseNotesSource: filePath
+          releaseNotesFilePath: $(workingDirectory)/changelog.md  
+          addChangeLog: true
+          assets: |
+            $(build.artifactstagingdirectory)/package/*.*
+            $(workingDirectory)/README.md
+
+     
+- stage: DeployStaging
+  displayName: Deployment on Staging
+  condition: or(eq(${{variables.isReleaseCandidate}}, true),eq(${{variables.isHotfix}}, true),eq(${{variables.isMaster}}, true))
+  jobs:
+    - deployment: Staging
+      environment: 
+        name: Staging
+
+      variables:
+        - group: repository.variables
+        - name: repository_url
+          value: github.com/chrisism/repository.chrisism.dev.git
+        - name: repository_name
+          value: repository.chrisism.dev
+        - name: repository_data_dir
+          value: 'matrix'
+
+      strategy:     
+        runOnce:
+          deploy:
+            steps:
+              - download: current
+                displayName: 'Downloading addon artifact'
+
+              - template: publish_in_repository_steps.yml
+
+- stage: DeployProd
+  displayName: Deployment on Production
+  condition: and(succeeded(), eq(${{variables.isMaster}}, true))
+  jobs:
+    - deployment: Production
+      environment: 
+        name: Production
+
+      variables:
+        - group: repository.variables
+        - name: repository_url
+          value: github.com/chrisism/repository.chrisism.git
+        - name: repository_name
+          value: repository.chrisism
+        - name: repository_data_dir
+          value: 'matrix'
+        - name: branch_name
+          value: master
+        - name: kodi_repository_url
+          value: github.com/chrisism/repo-resources.git
+        - name: kodi_repository_name
+          value: repo-resources
+        - name: kodi_branch_name
+          value: leia
+        
+
+      strategy:     
+        runOnce:
+          deploy:
+            steps:
+              - download: current
+                displayName: 'Downloading addon artifacts'
+                
+              - template: publish_in_repository_steps.yml
+              - template: publish_in_kodi_repository_steps.yml
