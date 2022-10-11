@@ -208,7 +208,7 @@ stages:
      
 - stage: DeployStaging
   displayName: Deployment on Staging
-  condition: or(eq(${{variables.isReleaseCandidate}}, true),eq(${{variables.isHotfix}}, true),eq(${{variables.isMaster}}, true))
+  condition: and(succeeded(), or(eq(${{variables.isReleaseCandidate}}, true),eq(${{variables.isHotfix}}, true),eq(${{variables.isMaster}}, true)))
   jobs:
     - deployment: Staging
       environment: 

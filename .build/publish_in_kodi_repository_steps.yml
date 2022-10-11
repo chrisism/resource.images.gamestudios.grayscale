@@ -6,9 +6,14 @@
 steps:
   - script: |
       git clone https://$(kodi_repository_url)
-      git checkout $(kodi_branch_name)
     workingDirectory: $(Pipeline.Workspace)/
     displayName: 'Clone git repository for kodi repository'
+
+  - script: |
+      git fetch --all
+      git checkout $(kodi_branch_name)
+    workingDirectory: $(Pipeline.Workspace)/$(kodi_repository_name)
+    displayName: 'Fetch and checkout correct branch for kodi repository'
 
   - script: |
       git config user.email $(git_emailAddress)
